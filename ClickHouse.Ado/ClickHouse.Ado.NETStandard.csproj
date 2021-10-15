@@ -6,7 +6,7 @@
     <Authors>Andrey Zakharov</Authors>
     <Version>1.3.1</Version>
 
-    <TargetFrameworks>net461;netstandard1.5;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net45;net461;netstandard2.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>ClickHouse.Ado</AssemblyName>
 
@@ -32,16 +32,16 @@ del /q $(SolutionDir).lock
 :end</PreBuildEvent>
   </PropertyGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net461' or '$(TargetFramework)' == 'net45' ">
     <Reference Include="System.Data" />
     <Reference Include="System" />
   </ItemGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net461' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net461' or '$(TargetFramework)' == 'net45' ">
    	<PackageTargetFallback>$(PackageTargetFallback);net4-client</PackageTargetFallback>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net461' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net461' or '$(TargetFramework)' == 'net45' ">
     <DefineConstants>$(DefineConstants);FRAMEWORK461;CLASSIC_FRAMEWORK</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.5' ">
