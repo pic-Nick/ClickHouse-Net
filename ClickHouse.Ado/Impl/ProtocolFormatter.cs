@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
 using ClickHouse.Ado.Impl.Compress;
 using ClickHouse.Ado.Impl.Data;
 using ClickHouse.Ado.Impl.Settings;
@@ -39,11 +37,9 @@ namespace ClickHouse.Ado.Impl {
 
         internal ProtocolFormatter(Stream baseStream, ClientInfo clientInfo, Func<bool> poll, int socketTimeout) {
             _baseStream = baseStream;
+            _ioStream = baseStream;
             _poll = poll;
             _socketTimeout = socketTimeout;
-            _ioStream = _baseStream;
-            /*reader = new BinaryReader(_baseStream,Encoding.UTF8);
-            writer = new BinaryWriter(_baseStream);*/
             ClientInfo = clientInfo;
         }
 
@@ -55,7 +51,7 @@ namespace ClickHouse.Ado.Impl {
             _compressor = connectionSettings.Compress ? Compressor.Create(connectionSettings) : null;
             WriteUInt((int) ClientMessageType.Hello);
 
-            WriteString(ClientInfo.ClientName);
+            WriteString(string.IsNullOrEmpty(connectionSettings.ClientName) ? ClientInfo.ClientName : connectionSettings.ClientName);
             WriteUInt(ClientInfo.ClientVersionMajor);
             WriteUInt(ClientInfo.ClientVersionMinor);
             WriteUInt(ClientInfo.ClientRevision);
@@ -100,6 +96,8 @@ namespace ClickHouse.Ado.Impl {
                                ClientInfo clientInfo,
                                IEnumerable<Block> xtables,
                                bool noData) {
+            if(_connectionSettings.Trace)
+                Trace.WriteLine($"Executing sql \"{sql}\"","ClickHouse.Ado");
             WriteUInt((int) ClientMessageType.Query);
             WriteString("");
             if (ServerInfo.Build >= ProtocolCaps.DbmsMinRevisionWithClientInfo) {
@@ -108,7 +106,7 @@ namespace ClickHouse.Ado.Impl {
                 else
                     clientInfo.QueryKind = QueryKind.Secondary;
 
-                clientInfo.Write(this);
+                clientInfo.Write(this,_connectionSettings.ClientName);
             }
 
             var compressionMethod = _compressor != null ? _compressor.Method : CompressionMethod.Lz4;
@@ -308,32 +306,13 @@ namespace ClickHouse.Ado.Impl {
         public byte[] ReadBytes(int i, int size=-1) {
             var bytes = new byte[size == -1 ? i : size];
             var read = 0;
-            var cur = 0;
-            var networkStream = _ioStream as NetworkStream ?? (_ioStream as UnclosableStream)?.BaseStream as NetworkStream;
-            long waitTimeStamp = 0;
 
             do {
-                cur = _ioStream.Read(bytes, read, i - read);
+                var cur = _ioStream.Read(bytes, read, i - read);
                 read += cur;
 
                 if (cur == 0) {
-                    // when we read from non-NetworkStream there's no point in waiting for more data
-                    if (networkStream == null)
                         throw new EndOfStreamException();
-                    // check for DataAvailable forces an exception if socket is closed
-                    if (networkStream.DataAvailable)
-                        continue;
-
-                    if (waitTimeStamp == 0)
-                        waitTimeStamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-
-                    // check for socket timeout if we are expecting data, but somehow server is dead or stopped sending data
-                    if (DateTimeOffset.Now.ToUnixTimeMilliseconds() - _socketTimeout > waitTimeStamp)
-                        throw new TimeoutException("Socket timeout while waiting for data");
-
-                    Thread.Sleep(1);
-                } else {
-                    waitTimeStamp = 0;
                 }
             } while (read < i);
 
