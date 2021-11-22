@@ -63,7 +63,7 @@ namespace ClickHouse.Ado {
         public bool Async { get; set; }
         public int BufferSize { get; set; } = 4096;
         public int ApacheBufferSize { get; set; }
-        public int SocketTimeout { get; set; } = 1000;
+        public int SocketTimeout { get; set; } = 10000;
         public int ConnectionTimeout { get; set; } = 1000;
         public int DataTransferTimeout { get; set; } = 1000;
         public int KeepAliveTimeout { get; set; } = 1000;
