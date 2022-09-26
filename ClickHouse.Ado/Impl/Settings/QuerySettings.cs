@@ -233,10 +233,19 @@ namespace ClickHouse.Ado.Impl.Settings {
               *  will skip until next line and continue. 
               */
             {"input_format_allow_errors_num", new UInt64SettingValue(0)},
-            {"input_format_allow_errors_ratio", new FloatSettingValue(0)}
+            {"input_format_allow_errors_ratio", new FloatSettingValue(0)},
+
+            /** Maximum query execution time in seconds. */
+            {"max_execution_time", new UInt64SettingValue(60)}
         };
 
         private readonly Dictionary<string, SettingValue> _settings = new Dictionary<string, SettingValue>();
+
+        public static QuerySettings fromConnectionSettings(ClickHouseConnectionSettings connSettings) {
+            var querySettings = new QuerySettings();
+            querySettings.Set("max_execution_time", (ulong)connSettings.MaxExecutionTime);
+            return querySettings;
+        }
 
         public void Set(string name, ulong value) {
             var def = SettingDefaults[name];

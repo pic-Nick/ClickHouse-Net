@@ -121,7 +121,7 @@ namespace ClickHouse.Ado.Impl {
                 if (settings != null)
                 {
                     settings.Write(this);
-                    compressionMethod = settings.Get<CompressionMethod>("compression_method");
+                    compressionMethod = settings.Get<CompressionMethod>("network_compression_method");
                 }
                 else
                 {

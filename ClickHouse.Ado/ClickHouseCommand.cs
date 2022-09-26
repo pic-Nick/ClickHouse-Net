@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using ClickHouse.Ado.Impl.ATG.Insert;
 using ClickHouse.Ado.Impl.Data;
+using ClickHouse.Ado.Impl.Settings;
 
 namespace ClickHouse.Ado {
     public class ClickHouseCommand : IDbCommand {
@@ -83,7 +84,7 @@ namespace ClickHouse.Ado {
 
                 xText.Append(" VALUES");
 
-                connection.Formatter.RunQuery(xText.ToString(), QueryProcessingStage.Complete, null, null, null, false);
+                connection.Formatter.RunQuery(xText.ToString(), QueryProcessingStage.Complete, QuerySettings.fromConnectionSettings(connection.ConnectionSettings), null, null, false);
                 var schema = connection.Formatter.ReadSchema();
                 if (insertParser.oneParam != null) {
                     if (Parameters[insertParser.oneParam].Value is IBulkInsertEnumerable bulkInsertEnumerable) {
@@ -127,7 +128,7 @@ namespace ClickHouse.Ado {
 
                 connection.Formatter.SendBlocks(new[] {schema});
             } else {
-                connection.Formatter.RunQuery(SubstituteParameters(CommandText), QueryProcessingStage.Complete, null, null, null, false);
+                connection.Formatter.RunQuery(SubstituteParameters(CommandText), QueryProcessingStage.Complete, QuerySettings.fromConnectionSettings(connection.ConnectionSettings), null, null, false);
             }
 
             if (!readResponse) return;
